@@ -29,7 +29,7 @@ class HookIoCreateDevice(angr.SimProcedure):
 
         # Retrieve the device name.
         device_name_str = utils.read_buffer_from_unicode_string(self.state, DeviceName)
-        if (device_name_str == "") and (device_name_str == None):
+        if (device_name_str == "") or (device_name_str == None):
             return 0
         
         utils.print_info(f'device name: {device_name_str}')
