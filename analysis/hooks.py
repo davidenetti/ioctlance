@@ -671,8 +671,8 @@ class HookRtlQueryRegistryValues(angr.SimProcedure):
                 if TAINTED_BUFFER_ALLOC not in str(subsequent_entry_context_view.deref.uint32_t.resolved):
                     continue
 
-                vuln_title = f"RtlQueryRegistryValues - Controllable first 4 bytes of EntryContext {subsequent_entry_context_index} by entry {entry_context_index}"
-                vuln_description = "RtlQueryRegistryValues"
+                vuln_title = f"buffer overflow"
+                vuln_description = f"RtlQueryRegistryValues - Controllable first 4 bytes of EntryContext"
                 vuln_parameters = {
                     "Vulnerable entry index" : entry_context_index,
                     "Vulnerable entry name" : entry_context_name, 
@@ -686,8 +686,8 @@ class HookRtlQueryRegistryValues(angr.SimProcedure):
 
                 # If the controllable EntryContext is inside the table
                 if state.solver.is_true(subsequent_entry_context_view.resolved < end_of_table_addr):
-                    vuln_title = f"RtlQueryRegistryValues - Controllable binary EntryContext {subsequent_entry_context_index} before the start of the table or in the middle of it"
-                    vuln_description = "RtlQueryRegistryValues"
+                    vuln_title = f"buffer overflow"
+                    vuln_description = f"RtlQueryRegistryValues - Controllable binary EntryContext {subsequent_entry_context_index} before the start of the table or in the middle of it"
                     vuln_parameters = {                        
                         "Vulnerable entry index" : subsequent_entry_context_index,
                         "Vulnerable entry name" : subsequent_entry_context_name, 
@@ -698,7 +698,7 @@ class HookRtlQueryRegistryValues(angr.SimProcedure):
                     vuln_others = {"return address": ret_addr}
                     utils.print_vuln(vuln_title, vuln_description, state, vuln_parameters, vuln_others)
 
-    def run(self, RelativeTo, Path, Table, Context, Environment):
+    def run(self, RelativeTo, Path, QueryTable, Context, Environment):
         ret_addr = hex(self.state.callstack.ret_addr)
         ptr_size = self.state.arch.bytes
 
@@ -708,7 +708,7 @@ class HookRtlQueryRegistryValues(angr.SimProcedure):
             # Each RtlQueryRegistryTable entry is 7 pointers long:
             indexWhile  += 1
             assert(self.state.mem.RTL_QUERY_REGISTRY_TABLE._type.size == (0x38 * 8))
-            entry_ptr = Table + indexWhile * (self.state.mem.RTL_QUERY_REGISTRY_TABLE._type.size // 8)
+            entry_ptr = QueryTable + indexWhile * (self.state.mem.RTL_QUERY_REGISTRY_TABLE._type.size // 8)
             table_entry = self.state.mem[entry_ptr].RTL_QUERY_REGISTRY_TABLE
 
             try:
@@ -752,8 +752,8 @@ class HookRtlQueryRegistryValues(angr.SimProcedure):
             valid_positive_magnitude = self.state.solver.is_true((magnitude.resolved & 0x80000000) == 0) and self.state.solver.is_true(magnitude.resolved > 4)
             valid_negative_magnitude = self.state.solver.is_true((magnitude.resolved & 0x80000000) != 0) and self.state.solver.is_true(-magnitude.resolved > 4)
             if valid_positive_magnitude or valid_negative_magnitude:
-                vuln_title = f"RtlQueryRegistryValues - Potential overflow due to non-zero DWORD on first bytes of entry {indexWhile}"
-                vuln_description = "RtlQueryRegistryValues"
+                vuln_title = f"buffer overflow"
+                vuln_description = f"RtlQueryRegistryValues - Potential overflow due to non-zero DWORD on first bytes of entry {indexWhile}"
                 vuln_parameters = {
                     "Vulnerable entry index" : indexWhile,
                     "Vulnerable entry name" : name, 
@@ -763,6 +763,6 @@ class HookRtlQueryRegistryValues(angr.SimProcedure):
                 vuln_others = {"return address": ret_addr}
                 utils.print_vuln(vuln_title, vuln_description, self.state, vuln_parameters, vuln_others)
         
-        end_of_table_addr = Table +  indexWhile * (self.state.mem.RTL_QUERY_REGISTRY_TABLE._type.size // 8)
-        HookRtlQueryRegistryValues.search_for_termdd_like_vuln(self.state, directTableEntries, Table, end_of_table_addr)
+        end_of_table_addr = QueryTable +  indexWhile * (self.state.mem.RTL_QUERY_REGISTRY_TABLE._type.size // 8)
+        HookRtlQueryRegistryValues.search_for_termdd_like_vuln(self.state, directTableEntries, QueryTable, end_of_table_addr)
         return 0

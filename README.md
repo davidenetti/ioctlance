@@ -19,8 +19,6 @@ Presented at [CODE BLUE 2023](https://codeblue.jp/2023/en/), this project titled
 - dangerous file operation
 - arbitrary process termination
 - close controllable handle in different process context
-- buffer overflow due to incorrect use of RtlQueryRegistryValues
-
 
 ### Optional Customizations
 - length limit
